@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>    
+<head>
+    <style>
+        #image-container {
+            width: 100%;
+        }
+
+        .image-item {
+            width: 100%;
+        }
+
+        img:hover {
+            border: 4px solid black;
+            cursor: pointer;
+        }        
+    </style>
+</head>
+<body>
+    <div id="image-container">
+        <img class="image-item" onclick="sendImageClick(this.dataset.id)" />
+        <img class="image-item" onclick="sendImageClick(this.dataset.id)" />
+        <img class="image-item" onclick="sendImageClick(this.dataset.id)" />
+    </div>
+</body>
+<script>
+    let images = document.querySelectorAll(".image-item");
+
+    async function sendImageClick(id) {
+        for (var image of images) {
+            image.style.display = 'none';
+        }
+
+        let response = await fetch('localhost/getimages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: id
+            })
+        });
+
+        let data = await response.json();
+   
+        images[0].src = "data:image/png;base64," + data.img1.base64;
+        images[1].src = "data:image/png;base64," + data.img2.base64;
+        images[2].src = "data:image/png;base64," + data.img3.base64;
+        
+        images[0].dataset.id = data.img1.id;
+        images[1].dataset.id = data.img2.id;
+        images[2].dataset.id = data.img3.id;
+
+        for (var image of images) {
+            image.style.display = 'block';
+        }            
+    }
+
+    window.onload = sendImageClick;
+</script>
+</html>
