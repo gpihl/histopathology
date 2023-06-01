@@ -6,9 +6,8 @@ import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 class Payload(object):
-    def __init__(self, j, ip):
+    def __init__(self, j):
         self.__dict__ = json.loads(j)
-        self.ip = ip
 
 class S(BaseHTTPRequestHandler):
     def _set_post_response(self, content_type):
@@ -33,8 +32,7 @@ class S(BaseHTTPRequestHandler):
             print('received post to: ' + self.path)
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
-            data = Payload(post_data, self.headers.get('X-Forwarded-For'))
-            # self.client_address[0] <-- this ip doesnt work when using ngrok
+            data = Payload(post_data)
 
             if self.path.split('/')[-1] == 'getimages':
                 imp.reload(scripts.handle_request)

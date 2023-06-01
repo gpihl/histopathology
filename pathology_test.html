@@ -17,6 +17,9 @@
     </style>
 </head>
 <body>
+    <h4 id="progress"></h4>
+    <input type="text" id="userIdInput">
+    <button id="startTestButton" onclick="startTest()">Start test</button>
     <div id="image-container">
         <img class="image-item" onclick="sendImageClick(this.dataset.id)" />
         <img class="image-item" onclick="sendImageClick(this.dataset.id)" />
@@ -25,6 +28,19 @@
 </body>
 <script>
     let images = document.querySelectorAll(".image-item");
+    let progress = document.querySelector('#progress');
+    let startTestButton = document.querySelector('#startTestButton');
+    let userIdInput = document.getElementById("userIdInput");
+    let userId = '';
+
+    function startTest() {
+        userId = userIdInput.value;
+        if (userId.length > 1) {
+            userIdInput.style.display = 'none';
+            startTestButton.style.display = 'none';
+            sendImageClick(null);
+        }
+    }
 
     async function sendImageClick(id) {
         for (var image of images) {
@@ -37,25 +53,34 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id: id
+                selectedImgId: id,
+                choiceIds: [images[0].dataset.id, images[1].dataset.id, images[2].dataset.id],
+                userId: userId,
             })
         });
 
         let data = await response.json();
-   
-        images[0].src = "data:image/png;base64," + data.img1.base64;
-        images[1].src = "data:image/png;base64," + data.img2.base64;
-        images[2].src = "data:image/png;base64," + data.img3.base64;
-        
-        images[0].dataset.id = data.img1.id;
-        images[1].dataset.id = data.img2.id;
-        images[2].dataset.id = data.img3.id;
 
-        for (var image of images) {
-            image.style.display = 'block';
-        }            
+        if (!data.done) {
+            images[0].src = "data:image/png;base64," + data.img1.base64;
+            images[1].src = "data:image/png;base64," + data.img2.base64;
+            images[2].src = "data:image/png;base64," + data.img3.base64;
+            
+            images[0].dataset.id = data.img1.id;
+            images[1].dataset.id = data.img2.id;
+            images[2].dataset.id = data.img3.id;
+
+            let progressText = 'Cluster: ' + data.clusterIdx + ' / ' + data.totalClusters + ', &nbsp;&nbsp; Test: ' + data.testIdx + ' / ' + data.totalTests;
+            progress.innerHTML = progressText;
+
+            for (var image of images) {
+                image.style.display = 'block';
+            }   
+        } else {
+            progress.innerHTML = 'All done, thanks!';
+        }
     }
 
-    window.onload = sendImageClick;
+    // window.onload = sendImageClick;
 </script>
 </html>
