@@ -10,6 +10,8 @@ tests_per_cluster = 10
 def get_response(data):
     user_id = data.userId
     current_cluster, current_test = get_current_progress(user_id)
+    done=False
+    total_clusters = get_total_clusters()
 
     if image_was_selected(data):
         record_selection(data.selectedImgId, data.choiceIds, user_id, current_cluster)
@@ -18,17 +20,22 @@ def get_response(data):
         if next_test > tests_per_cluster:
             next_test = 1
             next_cluster += 1
+            total_clusters = get_total_clusters()
+            done = next_cluster >= total_clusters
     else:
         next_test = current_test
         next_cluster = current_cluster
-
-    total_clusters = get_total_clusters()
-    done = next_cluster > total_clusters
+        total_clusters = get_total_clusters()
+        done = next_cluster >= total_clusters
 
     if not done:
         in_cluster_filenames = get_png_filenames([next_cluster])
-        out_of_cluster_filenames = get_png_filenames([i for i in range(1, total_clusters + 1) if i != next_cluster])
-        random_in_cluster_filenames = random.sample(in_cluster_filenames, 2)
+        print(in_cluster_filenames)
+        out_of_cluster_filenames = get_png_filenames([i for i in range(total_clusters) if i != next_cluster])
+        # Calculate the start index based on the test number
+        start_index = (next_test - 1) * 2 
+        # Select 2 files per test following the order from 0 to 20
+        random_in_cluster_filenames = in_cluster_filenames[start_index : start_index + 2]
         random_out_of_cluster_filename = random.sample(out_of_cluster_filenames, 1)
         in_cluster_base64_imgs = list(map(png_to_base64, random_in_cluster_filenames))
         out_of_cluster_base64_imgs = list(map(png_to_base64, random_out_of_cluster_filename))
@@ -40,6 +47,7 @@ def get_response(data):
     
     resp = gzipencode(json_data.encode('utf-8'))
     return resp
+
 
 def image_was_selected(data):
     return isinstance(data.selectedImgId, str)
@@ -92,8 +100,8 @@ def get_current_cluster(user_directory):
     cluster_files = list_txt_files_without_extension(user_directory)
     cluster_files.sort()
     if len(cluster_files) == 0:
-        create_file(os.path.join(user_directory, '1.txt'))
-        current_cluster = 1
+        create_file(os.path.join(user_directory, '0.txt'))
+        current_cluster = 0
     else:
         current_cluster = int(cluster_files[-1])
     
